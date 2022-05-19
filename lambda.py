@@ -11,9 +11,9 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 
 s3 = boto3.resource('s3')
-ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
-logger.debug("Using SageMaker endpoint: %s", str(ENDPOINT_NAME))
-THRESHOLD = os.environ["THRESHOLD"]
+#ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
+#logger.debug("Using SageMaker endpoint: %s", str(ENDPOINT_NAME))
+#THRESHOLD = os.environ["THRESHOLD"]
 
 def lambda_handler(event, context):
     """A function to serialize target data from S3"""
@@ -34,7 +34,6 @@ def lambda_handler(event, context):
         image_data = base64.b64encode(f.read())
 
     # Pass the data back to the Step Function
-    print("Event:", event.keys())
     return {
         'statusCode': 200,
         'body': {
@@ -53,7 +52,7 @@ def lambda_handler(event, context):
 import json
 import boto3
 import base64
-
+ENDPOINT_NAME = "image-classification-2022-05-19-06-56-41-092"
 sagemaker_client = boto3.client('runtime.sagemaker')
 
 
@@ -89,7 +88,7 @@ def lambda_handler(event, context):
 # we need to filter low-confidence inferences when greather than given threshold
 
 import json
-
+THRESHOLD = .60
 class Threshold_Error(Exception):
     pass
 
