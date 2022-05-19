@@ -2,8 +2,18 @@
 import json
 import boto3
 import base64
+import logging
+import os
+import sys
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler(sys.stdout))
 
 s3 = boto3.resource('s3')
+ENDPOINT_NAME = os.environ["ENDPOINT_NAME"]
+logger.debug("Using SageMaker endpoint: %s", str(ENDPOINT_NAME))
+THRESHOLD = os.environ["THRESHOLD"]
 
 def lambda_handler(event, context):
     """A function to serialize target data from S3"""
@@ -46,7 +56,6 @@ import base64
 
 sagemaker_client = boto3.client('runtime.sagemaker')
 
-ENDPOINT = "image-classification-2022-05-19-06-56-41-092"
 
 
 def lambda_handler(event, context):
@@ -55,7 +64,7 @@ def lambda_handler(event, context):
 
     # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sagemaker-runtime.html#SageMakerRuntime.Client.invoke_endpoint
     response = sagemaker_client.invoke_endpoint(
-        EndpointName=ENDPOINT,
+        EndpointName=ENDPOINT_NAME,
         ContentType='application/x-image',
         Body=image
     )
@@ -81,24 +90,22 @@ def lambda_handler(event, context):
 
 import json
 
-THRESHOLD = .93
-
+class Threshold_Error(Exception):
+    pass
 
 def lambda_handler(event, context):
-    print(event)
     # Grab the inferences from the event
     inferences = event["body"]["inferences"]
 
     # Check if any values in our inferences are above THRESHOLD
-    meets_threshold = any(i >= THRESHOLD for i in inferences)
-    print(meets_threshold)
+    meets_threshold = any(i > THRESHOLD for i in inferences)
 
     # If our threshold is met, pass our data back out of the
     # Step Function, else, end the Step Function with an error
     if meets_threshold:
         pass
     else:
-        raise ("THRESHOLD_CONFIDENCE_NOT_MET")
+        raise Threshold_Error("THRESHOLD_CONFIDENCE_NOT_MET")
 
     return {
         'statusCode': 200,
